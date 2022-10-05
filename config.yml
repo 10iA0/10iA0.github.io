@@ -1,0 +1,78 @@
+baseURL: 'https://10iA0.github.io'
+# homepage: 'https://10iA0.github.io'
+title: Jihang Xiao
+theme: ladder
+license: MIT
+licenselink: 'https://github.com/guangzhengli/hugo-theme-ladder/blob/master/LICENSE'
+description: 'Horseman, pass by.'
+defaultContentLanguage: 'en'
+
+paginate: 5
+params:
+  avatarURL: /images/avatar.png
+  favicon: ☀️
+  options:
+    showDarkMode: true
+    enableImgZooming: true
+    enableMultiLang: true
+
+  darkModeTheme: data-dark-mode
+      
+  social:
+    - name: GitHub
+      pre: >-
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+      url: 'https://github.com/10iA0'
+
+languages:
+  en:
+    languageName: EN
+    # brand: Home☀️
+    author: Jihang Xiao
+    authorDescription: a cook, photographer, and data project manager. 
+    info: I had been devoting to big data analysis in e-commerce of food and laundry industries and had brought beneficial life services to more than 5 million users and 1 million families.
+
+    menu:
+      main:
+        - name: Home
+          url: /
+          weight: 1
+        - name: Post
+          url: /archives
+          weight: 2
+        - name: Tags
+          url: /tags
+          weight: 3
+        # - name: Categories
+        #   url: /series
+        #   weight: 4
+        - name: Resume
+          url: /resume
+          weight: 5
+  zh:
+    languageName: 中
+    # brand: 主页☀️
+    author: 肖霁航
+    authorDescription: 什么都略懂一点，生活会精彩一些。
+    info: 我的职业经历主要集中在电商，特别是食品和洗护两个领域，已通过大数据为超500万用户与100万家庭提供生活服务，专注数据治理，数据分析与产品设计。
+    menu:
+      main:
+        - name: 主页
+          url: /
+          weight: 1
+        - name: 文章
+          url: /archives
+          weight: 2
+        - name: 标签
+          url: /tags
+          weight: 3
+        # - name: 分类
+        #   url: /series
+        #   weight: 4
+        - name: 简历
+          url: /resume
+          weight: 5
+
+taxonomies:
+  series: series
+  tags: tags
