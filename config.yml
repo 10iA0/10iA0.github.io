@@ -10,7 +10,7 @@ defaultContentLanguage: 'en'
 paginate: 5
 params:
   avatarURL: /images/avatar.png
-  favicon: ☀️
+  favicon: /images/sun.png
   options:
     showDarkMode: true
     enableImgZooming: true
@@ -29,9 +29,9 @@ languages:
     languageName: EN
     # brand: Home☀️
     author: Jihang Xiao
-    authorDescription: a cook, photographer, and data project manager. 
-    info: I had been devoting to big data analysis in e-commerce of food and laundry industries and had brought beneficial life services to more than 5 million users and 1 million families.
-
+    authorDescription: a cook, photographer, and data analyst. 
+    info: I was a data worker in e-commerce, successively served as data analyst, data projet manager, and brought beneficial life services to more than 5 million users and 1 million families.
+    # had 3 years experience, as a data analyst, 
     menu:
       main:
         - name: Home
@@ -54,7 +54,7 @@ languages:
     # brand: 主页☀️
     author: 肖霁航
     authorDescription: 什么都略懂一点，生活会精彩一些。
-    info: 我的职业经历主要集中在电商，特别是食品和洗护两个领域，已通过大数据为超500万用户与100万家庭提供生活服务，专注数据治理，数据分析与产品设计。
+    info: 我一个数据工作者，职业经历主要集中在电商，特别是食品和洗护两个领域，已通过大数据为超500万用户与100万家庭提供生活服务，专注数据治理，数据分析与产品设计。
     menu:
       main:
         - name: 主页
