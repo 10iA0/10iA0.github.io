@@ -10,7 +10,8 @@ defaultContentLanguage: 'en'
 paginate: 5
 params:
   avatarURL: /images/avatar.png
-  favicon: /images/sun.png
+  favicon: ☀️
+  # favicon: /images/sun.png
   options:
     showDarkMode: true
     enableImgZooming: true
@@ -29,9 +30,8 @@ languages:
     languageName: EN
     # brand: Home☀️
     author: Jihang Xiao
-    authorDescription: Data Worker, Hike Enthusiast, Foodie. 
-    info: I have been a data worker in e-commerce, successively served as data analyst, data projet manager, and brought beneficial life services to more than 5 million users and 1 million families.
-    # had 3 years experience, as a data analyst, 
+    authorDescription: Data Analyst, Hike Enthusiast, Foodie. 
+    info: I have been a data analyst in e-commerce of food and IoT of laundry and brought beneficial life services to more than 10 million consumers and families in mainland of China.
     menu:
       main:
         - name: Home
@@ -46,15 +46,15 @@ languages:
         # - name: Categories
         #   url: /series
         #   weight: 4
-        - name: Resume
-          url: /resume
+        - name: About
+          url: /about
           weight: 5
   zh:
     languageName: 中
     # brand: 主页☀️
     author: 肖霁航
     authorDescription: 什么都略懂一点，生活会精彩一些。
-    info: 我一个数据工作者，职业经历主要集中在电商，特别是食品和洗护两个领域，已通过大数据为超500万用户与100万家庭提供生活服务，专注数据治理，数据分析与产品设计。
+    info: 我一个数据工作者，专注数据治理与数据分析，职业经历主要集中在食品电商和物联网洗护两个领域，已通过大数据在中国大陆为超1000万用户与家庭提供优质服务。
     menu:
       main:
         - name: 主页
@@ -69,8 +69,8 @@ languages:
         # - name: 分类
         #   url: /series
         #   weight: 4
-        - name: 简历
-          url: /resume
+        - name: 关于
+          url: /about
           weight: 5
 
 taxonomies:

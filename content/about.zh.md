@@ -1,4 +1,4 @@
 ---
-title: "简历"
+title: "关于我"
 layout: "resume"
 ---
