@@ -1,19 +1,14 @@
-- [How to set up a WSL development environment](#how-to-set-up-a-wsl-development-environment)
-  - [Run GUI apps on WSL](#run-gui-apps-on-wsl)
-  - [Install Anaconda](#install-anaconda)
-    - [Install Anaconda](#install-anaconda-1)
-    - [Run the installer script](#run-the-installer-script)
-    - [Accept the License terms](#accept-the-license-terms)
-    - [Select the Installation directory](#select-the-installation-directory)
-    - [Reload the Shell](#reload-the-shell)
-  - [Install Database](#install-database)
-    - [Postgresql](#postgresql)
-    - [Cassandra](#cassandra)
-      - [Prerequisites](#prerequisites)
-      - [get GPG key and add repository to sources list](#get-gpg-key-and-add-repository-to-sources-list)
-      - [Install Cassandra](#install-cassandra)
-      - [The basic commands](#the-basic-commands)
+---
+title: How to set up a WSL development environment
+date: 2022-08-14 16:47:12
+tags: ["Anaconda", "PostgreSQL", "Cassandra"]
+series: ["WSL", "Linux"]
+featured: true
+---
 
+After installation of WSL, we should set up a development environment user-friendly. For me, my environment always contain Git, Anaconda, PostgreSQL and GUI apps used in WSL.
+
+<!--more-->
 # How to set up a WSL development environment
 
 The [original document](https://learn.microsoft.com/en-us/windows/wsl/setup/environment) have detail description on how to set up [VS Code](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-vscode), [Git](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git), [Database](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-database), [GUI apps](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) and [NodeJS](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl). However, even I did what th original document asked me to do, I still encoutered some problems.
