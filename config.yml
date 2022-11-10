@@ -10,8 +10,8 @@ defaultContentLanguage: 'en'
 paginate: 5
 params:
   avatarURL: /images/avatar.png
-  favicon: ☀️
-  # favicon: /images/sun.png
+  # favicon: ☀️
+  favicon: /images/sun.png
   options:
     showDarkMode: true
     enableImgZooming: true
