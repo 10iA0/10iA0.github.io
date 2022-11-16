@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on Jihang Xiao</title>
+    <link>https://10iA0.github.io/tags/</link>
+    <description>Recent content in Tags on Jihang Xiao</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 25 Jul 2022 22:52:00 +0000</lastBuildDate><atom:link href="https://10iA0.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Anaconda</title>
+      <link>https://10iA0.github.io/tags/anaconda/</link>
+      <pubDate>Mon, 25 Jul 2022 22:52:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/anaconda/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Cassandra</title>
+      <link>https://10iA0.github.io/tags/cassandra/</link>
+      <pubDate>Mon, 25 Jul 2022 22:52:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/cassandra/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Java</title>
+      <link>https://10iA0.github.io/tags/java/</link>
+      <pubDate>Mon, 25 Jul 2022 22:52:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/java/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Postgresql</title>
+      <link>https://10iA0.github.io/tags/postgresql/</link>
+      <pubDate>Mon, 25 Jul 2022 22:52:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/postgresql/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Linux</title>
+      <link>https://10iA0.github.io/tags/linux/</link>
+      <pubDate>Mon, 25 Jul 2022 20:13:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/linux/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>os</title>
+      <link>https://10iA0.github.io/tags/os/</link>
+      <pubDate>Thu, 25 Jul 2019 16:43:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/os/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>psycopg2</title>
+      <link>https://10iA0.github.io/tags/psycopg2/</link>
+      <pubDate>Thu, 25 Jul 2019 16:43:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/psycopg2/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>SQL</title>
+      <link>https://10iA0.github.io/tags/sql/</link>
+      <pubDate>Thu, 25 Jul 2019 16:43:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/sql/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Data Warehouse</title>
+      <link>https://10iA0.github.io/tags/data-warehouse/</link>
+      <pubDate>Thu, 25 Oct 2018 20:32:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/data-warehouse/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Operation Analysis</title>
+      <link>https://10iA0.github.io/tags/operation-analysis/</link>
+      <pubDate>Thu, 25 Oct 2018 20:32:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/operation-analysis/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ijava</title>
+      <link>https://10iA0.github.io/tags/ijava/</link>
+      <pubDate>Fri, 02 Feb 2018 08:52:10 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/ijava/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ipykernel</title>
+      <link>https://10iA0.github.io/tags/ipykernel/</link>
+      <pubDate>Fri, 02 Feb 2018 08:52:10 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/ipykernel/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Jupyter</title>
+      <link>https://10iA0.github.io/tags/jupyter/</link>
+      <pubDate>Fri, 02 Feb 2018 08:52:10 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/jupyter/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>kernel</title>
+      <link>https://10iA0.github.io/tags/kernel/</link>
+      <pubDate>Fri, 02 Feb 2018 08:52:10 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/kernel/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>nbextension</title>
+      <link>https://10iA0.github.io/tags/nbextension/</link>
+      <pubDate>Fri, 02 Feb 2018 08:52:10 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/tags/nbextension/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

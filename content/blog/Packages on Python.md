@@ -1,6 +1,6 @@
 ---
-title: os
-date: 2019-07-25 16:43:00
+title: Packages on Python
+date: 2019-07-25T16:43:00
 tags: ["os"]
 series: ["Python"]
 featured: false

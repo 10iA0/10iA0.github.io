@@ -1,6 +1,6 @@
 ---
 title: Location Analysis
-date: 2018-10-25 20:32:00
+date: 2018-10-25T20:32:00
 tags: ["Operation Analysis"]
 series: ["Qing Yang"]
 featured: true

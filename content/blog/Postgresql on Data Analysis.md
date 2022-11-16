@@ -1,8 +1,8 @@
 ---
-title: Postgresql in data analysis
-date: 2019-07-25 16:43:00
-tags: ["psycopg2","SQL"]
-series: ["Postgresql"]
+title: Postgresql on Data Analysis
+date: 2018-03-25 16:43:00
+tags: ["psycopg2","SQL", "Postgresql on Python"]
+series: ["Postgresql","Data Analysis"]
 featured: false
 ---
 <!--more-->

@@ -1,8 +1,8 @@
 ---
-title: Manipulating Anaconda
-date: 2018-02-01 18:21:43
+title: Anaconda Operation
+date: 2018-02-07 18:21:43
 tags: ["Anaconda"]
-# series: ["WSL"]
+series: ["Linux"]
 featured: false
 ---
 The key points of using anaconda in data analysis.
@@ -18,32 +18,32 @@ The (base) means that, from the time of being, I am in base environment. However
 
 The basic conda commands are really simple and useful:
 
-## Creating an environment
+## Create an environment
 ```
 conda create -n <env_name> <package1> <package2> <package3> ...
 ```
 
-## Activating an environment
+## Activate an environment
 ```
 conda activate <env_name>
 ```
 
-## Deactivating an environment
+## Deactivate an environment
 ```
 conda deactivate <env_name>
 ```
 
-## Installing packages in an environment
+## Install packages in an environment
 ```
 conda install -n <env_name> <package1> <package2> <package3> ...
 ```
 
-## Updating packages in an environment
+## Update packages in an environment
 ```
 conda update -n <env_name> <package1> <package2> <package3> ...
 ```
 
-## Deleting an environment
+## Delete an environment
 ```
 conda remove -n <env_name> -all
 ```

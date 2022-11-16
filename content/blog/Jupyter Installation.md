@@ -1,11 +1,31 @@
 ---
-title: Configurating Jupyter
-date: 2018-02-02 08:52:10
-tags: ["Jupyter","ipykernel","kernel","ijava","nbextension"]
-# series: ["Anaconda"]
+title: Jupyter Installation
+date: 2018-02-02 18:52:10
+tags: ["Jupyter","ipykernel","ijava","nbextension"]
+series: ["Anaconda"]
 featured: false
 ---
 <!--more-->
+
+# Updated date: 09/13/2022
+## Kernels
+There are kernels in other languages available such as [ijava](https://github.com/SpencerPark/IJava) for Java. 
+
+
+# Updated date: 05/03/2018
+## [Plugins](https://cloud.tencent.com/developer/article/1511752)
+
+There are plugins about Shell, themes, nbextension and Qgrid.
+
+#### nbextension
+>the `nbextensions` is a module of JavaScript, which changes jupyter's UI to make its features flourish and robust.
+
+Install nbextensions
+```
+pip install jupyter_contrib_nbextensions
+```
+
+# Initialized date: 02/02/2018
 
 What is the difference between Anaconda and Jupyter? From an [answer](https://qr.ae/pvi18o) on Quora, I had a glance at their relation.
 
@@ -16,13 +36,13 @@ I ran jupyter notebook well in base environment once I installed Anaconda. Howev
 >Jupyter core packages and a ipykernel space would be automatically installed in base environment after the installation of Anaconda. Whereas, there is not an such automatization in non-base environments. users need to install these packages and configurate kernel spaces manually in every non-base environments.
 
 ## Kernels
-I installed `kernel` at first and choosed the ipykernel which means a kernel for IPython. There were also other kernels available such as [ijava](https://github.com/SpencerPark/IJava) for Java. After the installation of ipykernl, I ran `jupyter --version` to check which jupyter core packages were installed. On the next step, I made the configuration on kernelspec which is the relation between a kernel and an environment.
+I installed `kernel` at first and choosed the ipykernel which means a kernel for IPython. After the installation of ipykernl, I ran `jupyter --version` to check which jupyter core packages were installed. On the next step, I made the configuration on kernelspec which is the relation between a kernel and an environment.
 
-### Installing the IPython kernel
+### Install ipykernel
 ```
 conda install -n <env_name> ipykernel
 ```
-### Configurate IPython kernelspec
+### Configurate ipykernel space
 ```
 python -m ipykernel install --user --name <env_name>
 ```
@@ -34,7 +54,7 @@ python -m ipykernel install --user --name <env_name> --display-name "Python (env
 
 The `--name` value is used by Jupyter internally. These commands will overwrite any existing kernel with the same name. `--display-name` is what you see in the notebook menus.
 
-### Adminstration
+### Basic command lines
 The command lines to adminster kernels and kernelspecs:
 ```
 jupyter kernelspec list
@@ -50,18 +70,6 @@ conda remove -n <env_name> ipykernel
 
 ### [Exception](https://pythontechworld.com/article/detail/v4DOLJ3oZb2z)
 
-Sometimes we encounter the problem that a packages is installed  and loaded successfully in a active einvironment, but cannot be loaded as well in jpuyter notebook. In this condition, We run `jupyter kernelspec list` to get each kernelspec's path and open the file `kernel.json` in the path of the kernelspec of selected environment. Be care to check if the argv is the same as the output of `sys.executalbe`.
+I encountered a problem that a packages was installed and loaded successfully in an active einvironment, but reported an erro as I run code in jpuyter notebook. I ran `sys.executalbe` and got an output `/home/jihang/anaconda3/envs/kong/bin/python`. However, I was in env Sunny in that time. In this situation, I ran `jupyter kernelspec list` to get Sunny's path and opened its file `kernel.json`. As a result, I found the argv in `kernel.json` was wrong which is `/home/jihang/anaconda3/envs/kong/bin/python` instead of `/home/jihang/anaconda3/envs/sunny/bin/python`. After I corrected argv, everything gone well.
 
 `Note`: 属性sys.executable是一个字符串，在正常情况下，其值是当前运行的 Python 解释器对应的可执行程序所在的绝对路径。
-
-### [Tricks](https://cloud.tencent.com/developer/article/1511752)
-
-There are tricks about Shell, themes, nbextension and Qgrid.
-
-#### nbextension
->Besides using shell directly in jupter notebook, we can also add extensions by installing nbextensions. nbextensions is a module of JavaScript. The nbextension basiclly changes jupyter's UI to make its features flourish and robust.
-
-Installing nbextensions
-```
-pip install jupyter_contrib_nbextensions
-```

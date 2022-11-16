@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Blogs on Jihang Xiao</title>
+    <link>https://10iA0.github.io/blog/</link>
+    <description>Recent content in Blogs on Jihang Xiao</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 25 Jul 2022 22:52:00 +0000</lastBuildDate><atom:link href="https://10iA0.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Setting up WSL development environment</title>
+      <link>https://10iA0.github.io/blog/setting-up-wsl-development-environment/</link>
+      <pubDate>Mon, 25 Jul 2022 22:52:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/setting-up-wsl-development-environment/</guid>
+      <description>&lt;p&gt;After configuration of WSL, install Git, Anaconda, PostgreSQL and GUI apps used in WSL.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Configurating WSL</title>
+      <link>https://10iA0.github.io/blog/configurating-wsl/</link>
+      <pubDate>Mon, 25 Jul 2022 20:13:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/configurating-wsl/</guid>
+      <description>&lt;p&gt;How to use and run Windows Subsystem for Linux?&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Fundamental development environment on Hadoop</title>
+      <link>https://10iA0.github.io/blog/draft_hdfs/</link>
+      <pubDate>Tue, 15 Jun 2021 13:38:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/draft_hdfs/</guid>
+      <description>&lt;p&gt;Setting up the development environment on Hadoop is the key point in big data computing.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>os</title>
+      <link>https://10iA0.github.io/blog/os/</link>
+      <pubDate>Thu, 25 Jul 2019 16:43:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/os/</guid>
+      <description>&lt;p&gt;Python.os&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Postgresql in data analysis</title>
+      <link>https://10iA0.github.io/blog/postgresql-in-data-analysis/</link>
+      <pubDate>Thu, 25 Jul 2019 16:43:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/postgresql-in-data-analysis/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Data Warehouse</title>
+      <link>https://10iA0.github.io/blog/data-warehouse/</link>
+      <pubDate>Thu, 25 Oct 2018 20:32:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/data-warehouse/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Location Analysis</title>
+      <link>https://10iA0.github.io/blog/location-analysis/</link>
+      <pubDate>Thu, 25 Oct 2018 20:32:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/location-analysis/</guid>
+      <description>&lt;p&gt;“点位分析”是IoT洗衣业态最重要的分析之一，因为通过互联网，尤其是数据分析，赋能之后，我们与竞品的直接差异就是是否存在有效的&lt;strong&gt;数据运营&lt;/strong&gt;。数据化运营犹如开车，当我们踩一脚油门的时候，仪表盘立刻会有所反应，就算我们身体感受不到变化，我们也能通过仪表盘感受变化。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Configurating Jupyter</title>
+      <link>https://10iA0.github.io/blog/configurating-jupyter/</link>
+      <pubDate>Fri, 02 Feb 2018 08:52:10 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/configurating-jupyter/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Manipulating Anaconda</title>
+      <link>https://10iA0.github.io/blog/manipulating-anaconda/</link>
+      <pubDate>Thu, 01 Feb 2018 18:21:43 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/manipulating-anaconda/</guid>
+      <description>&lt;p&gt;The key points of using anaconda in data analysis.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Installing Anaconda</title>
+      <link>https://10iA0.github.io/blog/installing-anaconda/</link>
+      <pubDate>Thu, 01 Feb 2018 16:43:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/installing-anaconda/</guid>
+      <description>&lt;p&gt;The steps of installing anaconda.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://10iA0.github.io/blog/draft_glob/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/draft_glob/</guid>
+      <description>glob Citation: https://docs.python.org/3/library/glob.html
+import glob &amp;gt;&amp;gt;&amp;gt;glob.glob(&amp;#39;*.gif&amp;#39;) [&amp;#39;card.gif&amp;#39;] </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://10iA0.github.io/blog/the-sql-queries-we-use-in-data-engineering-normally/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/the-sql-queries-we-use-in-data-engineering-normally/</guid>
+      <description>Here are key points in DML language.
+Drop Tables if exists is used to drop existed tables. For example,
+drop table if exists transaction_fact; Create Tables if not exists is used to create tables that were not created at the time of being; primary key, not null are used to condition a column value unique and non-duplicated; references is used to set up a foreign key refering to a primary key in another table.</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,4 +1,14 @@
+---
+title: SQL in 10 Minutes
+date: 2017-07-25 20:22:00
+tags: ["SQL"]
+series: ["SQL"]
+featured: false
+---
+
 Here are key points in DML language.
+
+<!--more-->
 
 ## Drop Tables
 - `if exists` is used to drop existed tables. 

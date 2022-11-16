@@ -1,8 +1,8 @@
 ---
 title: Data Warehouse
-date: 2018-10-25 20:32:00
+date: 2018-10-25T20:32:00
 tags: ["Data Warehouse"]
-series: ["Qing Yang"]
+series: ["Data Warehouse","Qing Yang"]
 featured: true
 ---
 

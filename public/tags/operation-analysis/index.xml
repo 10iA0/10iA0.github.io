@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Operation Analysis on Jihang Xiao</title>
+    <link>https://10iA0.github.io/tags/operation-analysis/</link>
+    <description>Recent content in Operation Analysis on Jihang Xiao</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Thu, 25 Oct 2018 20:32:00 +0000</lastBuildDate><atom:link href="https://10iA0.github.io/tags/operation-analysis/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Location Analysis</title>
+      <link>https://10iA0.github.io/blog/location-analysis/</link>
+      <pubDate>Thu, 25 Oct 2018 20:32:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/location-analysis/</guid>
+      <description>&lt;p&gt;“点位分析”是IoT洗衣业态最重要的分析之一，因为通过互联网，尤其是数据分析，赋能之后，我们与竞品的直接差异就是是否存在有效的&lt;strong&gt;数据运营&lt;/strong&gt;。数据化运营犹如开车，当我们踩一脚油门的时候，仪表盘立刻会有所反应，就算我们身体感受不到变化，我们也能通过仪表盘感受变化。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

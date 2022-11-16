@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Java on Jihang Xiao</title>
+    <link>https://10iA0.github.io/tags/java/</link>
+    <description>Recent content in Java on Jihang Xiao</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 25 Jul 2022 22:52:00 +0000</lastBuildDate><atom:link href="https://10iA0.github.io/tags/java/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Setting up WSL development environment</title>
+      <link>https://10iA0.github.io/blog/setting-up-wsl-development-environment/</link>
+      <pubDate>Mon, 25 Jul 2022 22:52:00 +0000</pubDate>
+      
+      <guid>https://10iA0.github.io/blog/setting-up-wsl-development-environment/</guid>
+      <description>&lt;p&gt;After configuration of WSL, install Git, Anaconda, PostgreSQL and GUI apps used in WSL.&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
