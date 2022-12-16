@@ -1,0 +1,373 @@
+<!doctype html><html lang=en><head><meta name=viewport content="width=device-width,initial-scale=1"><title>Horseman, pass by.</title><meta charset=utf-8><meta name=description content="Ladder@Implementing a data warehouse on AWS - Horseman, pass by."><meta name=author content="Jihang XIAO"><link rel=canonical href=https://10iA0.github.io/blog/implementing-a-data-warehouse-on-aws/><meta property="og:title" content="Implementing a data warehouse on AWS"><meta property="og:description" content><meta property="og:type" content="article"><meta property="og:url" content="https://10iA0.github.io/blog/implementing-a-data-warehouse-on-aws/"><meta property="article:section" content="blog"><meta property="article:published_time" content="2019-05-20T22:13:00+00:00"><meta property="article:modified_time" content="2019-05-20T22:13:00+00:00"><meta property="og:see_also" content="https://10iA0.github.io/blog/introduction-to-data-warehouse/"><meta name=twitter:card content="summary"><meta name=twitter:title content="Implementing a data warehouse on AWS"><meta name=twitter:description content><script type=application/ld+json>{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":2,"name":"Blogs","item":"https://10iA0.github.io/blog/"},{"@type":"ListItem","position":3,"name":"Implementing a data warehouse on AWS","item":"https://10iA0.github.io/blog/implementing-a-data-warehouse-on-aws/"}]}</script><script type=application/ld+json>{"@context":"https://schema.org","@type":"BlogPosting","headline":"Implementing a data warehouse on AWS","name":"Implementing a data warehouse on AWS","description":"","keywords":["AWS"],"articleBody":"Implementing a data warehouse on AWS needs S3, and Redshif. As I have stored log files in S3, I only need create a Redshift and write ETL scripts to extract data from buckets of S3, transform them, and load them into databases on Redshift.\nConfiguration file dwh.cfg contains information of implementing a data warehouse on AWS. Every IAM user have a AWS Access Key and Secret Key while the user was created. Edit the dwh.cfg configuration file and fill in the AWS Access Key and Secret Key fields.\nAws Toolkit Boto3 is a Python SDK for programmatically accessing AWS. It enables developers to create, configure, and manage AWS services.\nIt is nature to use Boto3 to write a script aws_toolkit.py that create, configure, and manage AWS services we need on data warehouse automatically.\nTo summarize, resources are higher-level abstractions of AWS services compared to clients. Resources are the recommended pattern to use boto3 as you don’t have to worry about a lot of the underlying details when interacting with AWS services. As a result, code written with Resources tends to be simpler. However, Resources aren’t available for all AWS services. In such cases, there is no other choice but to use a Client instead.\nimport boto3 import json import configparser class aws(): KEY = None SECRET = None DWH_CLUSTER_TYPE = None DWH_NUM_NODES = None DWH_NODE_TYPE = None DWH_IAM_ROLE_NAME = None DWH_CLUSTER_IDENTIFIER = None DWH_DB = None DWH_DB_USER = None DWH_DB_PASSWORD = None DWH_PORT = None S3_LOG_DATA = None S3_LOG_JSONPATH = None DWH_IAM_ROLE_ARN = None def __init__(self, cfg_file='dwh.cfg'): \"\"\" Set the AWS Config parameters with value from dwh.cfg config file :param cfg_file: the path of configuration file \"\"\" print(\"Parsing the configuration file...\\n\") config = configparser.ConfigParser() with open(cfg_file) as cfg_file: config.read_file(cfg_file) self.KEY = config.get('AWS', 'KEY') self.SECRET = config.get('AWS', 'SECRET') self.DWH_CLUSTER_TYPE = config.get(\"DWH\", \"DWH_CLUSTER_TYPE\") self.DWH_NUM_NODES = config.get(\"DWH\", \"DWH_NUM_NODES\") self.DWH_NODE_TYPE = config.get(\"DWH\", \"DWH_NODE_TYPE\") self.DWH_IAM_ROLE_NAME = config.get(\"DWH\", \"DWH_IAM_ROLE_NAME\") self.DWH_CLUSTER_IDENTIFIER = config.get(\"DWH\", \"DWH_CLUSTER_IDENTIFIER\") self.DWH_DB = config.get(\"CLUSTER\", \"DB_NAME\") self.DWH_DB_USER = config.get(\"CLUSTER\", \"DB_USER\") self.DWH_DB_PASSWORD = config.get(\"CLUSTER\", \"DB_PASSWORD\") self.DWH_PORT = config.get(\"CLUSTER\", \"DB_PORT\") self.S3_LOG_DATA = config.get('S3', 'LOG_DATA') self.S3_LOG_JSONPATH = config.get('S3', 'LOG_JSONPATH') self.DWH_IAM_ROLE_ARN = config.get(\"IAM_ROLE\", \"ARN\") def client(self, client_name, region): \"\"\" Creates an AWS client (specified by the argument) in region (specified by argument) :param client_name: The client to be created :param region: The region where service has to be created :return client: The client for AWS service \"\"\" client = boto3.client(client_name, region_name=region, aws_access_key_id=self.KEY, aws_secret_access_key=self.SECRET) return client def resource(self, resource_name, region): \"\"\" Creates an AWS resource (specified by the argument) in region (specified by argument) :param resource_name: The resource to be created :param region: The region where resource has to be created :return resource: The resource for AWS service \"\"\" resource = boto3.resource(resource_name, region_name=region, aws_access_key_id=self.KEY, aws_secret_access_key=self.SECRET) return resource def create_iam_role(self, iam): \"\"\" Create the AWS Identity and Access Management (IAM) role. Attach AmazonS3ReadOnlyAccess role policy to the IAM specified in argument. Return the IAM role ARN string :param iam: Boto3 client for IAM :return roleArn: IAM role ARN string \"\"\" dwhRole = None try: print('1.1 Creating a new IAM Role') dwhRole = iam.create_role( Path='/', RoleName=self.DWH_IAM_ROLE_NAME, Description=\"Allows Redshift clusters to call AWS services on your behalf.\", AssumeRolePolicyDocument=json.dumps( {'Statement': [{'Action': 'sts:AssumeRole', 'Effect': 'Allow', 'Principal': {'Service': 'redshift.amazonaws.com'}}], 'Version': '2012-10-17'}) ) except Exception as exep: print(exep) dwhRole = iam.get_role(RoleName=self.DWH_IAM_ROLE_NAME) print('1.2 Attaching Policy') dwhRole_policy = iam.attach_role_policy(RoleName=self.DWH_IAM_ROLE_NAME, PolicyArn=\"arn:aws:iam::aws:policy\" \"/AmazonS3ReadOnlyAccess\")[ 'ResponseMetadata']['HTTPStatusCode'] roleArn = iam.get_role(RoleName=self.DWH_IAM_ROLE_NAME)['Role']['Arn'] return roleArn def create_redshift_cluster(self, redshift, roleArn): \"\"\" Create the AWS Redshift cluster :param redshift: Boto3 client for the Redshift :param roleArn: The ARN string for IAM role :return boolean: \"\"\" print(\"2. Starting Redshift cluster creation\") try: response = redshift.create_cluster( ClusterType=self.DWH_CLUSTER_TYPE, NodeType=self.DWH_NODE_TYPE, NumberOfNodes=int(self.DWH_NUM_NODES), DBName=self.DWH_DB, ClusterIdentifier=self.DWH_CLUSTER_IDENTIFIER, MasterUsername=self.DWH_DB_USER, MasterUserPassword=self.DWH_DB_PASSWORD, IamRoles=[roleArn] ) print(\"Redshift cluster creation http response status code: \") print(response['ResponseMetadata']['HTTPStatusCode']) return response['ResponseMetadata']['HTTPStatusCode'] == 200 except Exception as exep: print(exep) return False def delete_redshift_cluster(self, redshift): \"\"\" Delete the AWS Redshift cluster :param redshift: Boto3 client for Redshift \"\"\" redshift.delete_cluster(ClusterIdentifier=self.DWH_CLUSTER_IDENTIFIER, SkipFinalClusterSnapshot=True) def redshift_cluster_status(self, redshift): \"\"\" Retrieves the Redshift cluster status :param redshift: Boto3 client for Redshift :return cluster_status: The cluster status \"\"\" cluster_props = redshift.describe_clusters(ClusterIdentifier=self.DWH_CLUSTER_IDENTIFIER)['Clusters'][0] cluster_status = cluster_props['ClusterStatus'].lower() return cluster_status def config_update(self, redshift, cfg_file='dwh.cfg'): \"\"\" Write the cluster endpoint and IAM ARN string to the dwh.cfg configuration file :param redshift: Boto3 client for Redshift \"\"\" print(\"Writing the cluster endpoint address and IAM Role ARN to the config file...\\n\") cluster_props = redshift.describe_clusters(ClusterIdentifier=self.DWH_CLUSTER_IDENTIFIER)['Clusters'][0] config = configparser.ConfigParser() with open(cfg_file) as cfg_file: config.read_file(cfg_file) config.set(\"CLUSTER\", \"HOST\", cluster_props['Endpoint']['Address']) config.set(\"IAM_ROLE\", \"ARN\", cluster_props['IamRoles'][0]['IamRoleArn']) with open(cfg_file, 'w+') as cfg_file: config.write(cfg_file) def open_redshift_port(ec2, redshift): \"\"\" Opens an incoming TCP port to access Redshift cluster endpoint on VPC security group :param ec2: Boto3 client for EC2 instance :param Redshift: Boto3 client for Redshift \"\"\" global DWH_CLUSTER_IDENTIFIER, DWH_PORT cluster_props = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0] try: vpc = ec2.Vpc(id=cluster_props['VpcId']) all_security_groups = list(vpc.security_groups.all()) print(all_security_groups) defaultSg = all_security_groups[0] print(defaultSg) defaultSg.authorize_ingress( GroupName=defaultSg.group_name, CidrIp='0.0.0.0/0', IpProtocol='TCP', FromPort=int(DWH_PORT), ToPort=int(DWH_PORT) ) except Exception as error: print(error) SQL Toolkit While implementing a data warehouse on AWS, a lots of SQL are needed, which are used to create tables, insert data for ETL.\nCreate a Cluster The script create_aws_cluster.py is used to create a cluster on AWS. Run this file on console:\npython create_aws_cluster.py import time from aws_toolkit import * def main(): a = aws() ec2 = a.resource('ec2', \"us-west-2\") s3 = a.resource('s3', \"us-west-2\") iam = a.client('iam', \"us-west-2\") redshift = a.client('redshift', \"us-west-2\") roleArn = a.create_iam_role(iam) clusterCreationStarted = a.create_redshift_cluster(redshift, roleArn) if clusterCreationStarted: print(\"The cluster is being created.\") while True: print(\"Checking if the cluster is created...\") if a.redshift_cluster_status(redshift) == 'available': a.config_update(redshift) a.open_redshift_port(ec2, redshift) break else: print(\"The cluster is still being created. Please wait.\") time.sleep(30) print(\"The cluster is created successfully.\\n\") if __name__ == '__main__': main() Create tables The script create_tables.py is used to create tables on Redshift. Run this file on console:\npython create_table.py import sys import configparser import psycopg2 from sql_tookit import create_table_queries, drop_table_queries def drop_tables(cur, conn): \"\"\" Drop all the table in the Redshift cluster :param cur: cursor object to database connection :param conn: connection object to database \"\"\" for query in drop_table_queries: try: cur.execute(query) conn.commit() except psycopg2.Error as e: print(e) conn.close() sys.exit(0) def create_tables(cur, conn): \"\"\" Create all the tables in the Redshift cluster :param cur: cursor object to database connection :param conn: connection object to database \"\"\" for query in create_table_queries: try: cur.execute(query) conn.commit() except psycopg2.Error as e: print(e) conn.close() sys.exit(0) def main(): \"\"\" Connects to the Redshift cluster and resets the tables. \"\"\" config = configparser.ConfigParser() config.read('dwh.cfg') try: conn = psycopg2.connect(\"host={} dbname={} user={} password={} port={}\".format(*config['CLUSTER'].values())) cur = conn.cursor() except Exception as e: print(e) drop_tables(cur, conn) create_tables(cur, conn) conn.close() if __name__ == \"__main__\": main() Execute ETL The script etl.py is used to execute ETL processing. Run this file on console:\npython etl.py import configparser import psycopg2 from sql_toolkit import copy_table_queries, insert_table_queries def load_staging_tables(cur, conn): \"\"\" Load data from files stored in S3 to the staging tables. \"\"\" print(\"Loading data from JSON files stored in S3 buckets into staging tables\") for query in copy_table_queries: cur.execute(query) conn.commit() print(\"Complete.\\n\") def insert_tables(cur, conn): \"\"\" Insert data from staging tables into the tables. \"\"\" print(\"Inserting data from staging tables into Redshift tables\") for query in insert_table_queries: cur.execute(query) conn.commit() print(\"Complete.\\n\") def main(): \"\"\" Extract song metadata and user activity data from S3, transform it using a staging table, and load it into fact and dimensional tables for analysis \"\"\" config = configparser.ConfigParser() config.read('dwh.cfg') conn = psycopg2.connect(\"host={} dbname={} user={} password={} port={}\".format(*config['CLUSTER'].values())) cur = conn.cursor() load_staging_tables(cur, conn) insert_tables(cur, conn) conn.close() if __name__ == \"__main__\": main() ","wordCount":"1203","inLanguage":"en","datePublished":"2019-05-20T22:13:00Z","dateModified":"2019-05-20T22:13:00Z","author":{"@type":"Person","name":"Jihang XIAO"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://10iA0.github.io/blog/implementing-a-data-warehouse-on-aws/"},"publisher":{"@type":"Organization","name":"Horseman, pass by.","logo":{"@type":"ImageObject","url":"https://10iA0.github.io/favicon.ico"}}}</script><link rel=icon type=image/png href=/images/sun.png sizes=16x16><link rel=apple-touch-icon href=/images/sun.png><link rel=manifest href=/images/sun.png><link rel=stylesheet href=/css/main.min.64bc8c4cb2304e84167c1583fa1b5de80f6d5adc95abed2e616dea0ea5680e01.css integrity="sha256-ZLyMTLIwToQWfBWD+htd6A9tWtyVq+0uYW3qDqVoDgE=" crossorigin=anonymous media=screen><link rel=stylesheet href=/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css><script src=/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js></script>
+<script>hljs.highlightAll()</script><script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head><body><main class=wrapper><nav class=navigation><section class=container><a class=navigation-brand href=/></a><input type=checkbox id=menu-toggle>
+<label class="menu-button float-right" for=menu-toggle><span></span><span></span><span></span></label><ul class=navigation-list id=navigation-list><li class="navigation-item navigation-menu"><a class=navigation-link href=/>Home</a></li><li class="navigation-item navigation-menu"><a class=navigation-link href=/archives>Post</a></li><li class="navigation-item navigation-menu"><a class=navigation-link href=/tags>Tags</a></li><li class="navigation-item navigation-menu"><a class=navigation-link href=/about>About</a></li><li class="navigation-item menu-separator"><span>|</span></li><li class="navigation-item navigation-social"><a class=navigation-link href=https://github.com/10iA0><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37.0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44.0 0020 4.77 5.07 5.07.0 0019.91 1S18.73.65 16 2.48a13.38 13.38.0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07.0 005 4.77 5.44 5.44.0 003.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37.0 009 18.13V22"/></svg></a></li><li class="navigation-item navigation-dark"><button id=mode type=button aria-label="toggle user light or dark theme">
+<span class=toggle-dark><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span><span class=toggle-light><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span></button></li><li class="navigation-item navigation-language"><a href=https://10iA0.github.io/zh/>中</a></li></ul></section></nav><div id=content><article class=blog-single><header class=blog-title><h1>Implementing a data warehouse on AWS</h1></header><p><small>May 20, 2019&nbsp;· 1203 words&nbsp;· 6 min</small>
+<small>·
+<a href=https://10iA0.github.io/tags/aws/>AWS</a></small><p><div class=blog-toc><nav id=TableOfContents><ul><li><a href=#configuration-file>Configuration file</a></li><li><a href=#aws-toolkit>Aws Toolkit</a></li><li><a href=#sql-toolkit>SQL Toolkit</a></li><li><a href=#create-a-cluster>Create a Cluster</a></li><li><a href=#create-tables>Create tables</a></li><li><a href=#execute-etl>Execute ETL</a></li></ul></nav></div><section class=blog-content><p>Implementing a data warehouse on AWS needs S3, and Redshif. As I have stored log files in S3, I only need create a Redshift and write ETL scripts to extract data from buckets of S3, transform them, and load them into databases on Redshift.</p><h2 id=configuration-file>Configuration file</h2><p><code>dwh.cfg</code> contains information of implementing a data warehouse on AWS. Every IAM user have a AWS Access Key and Secret Key while the user was created. Edit the <code>dwh.cfg</code> configuration file and fill in the AWS Access Key and Secret Key fields.</p><h2 id=aws-toolkit>Aws Toolkit</h2><blockquote><p>Boto3 is a Python SDK for programmatically accessing AWS. It enables developers to create, configure, and manage AWS services.</p></blockquote><p>It is nature to use <code>Boto3</code> to write a script <code>aws_toolkit.py</code> that create, configure, and manage AWS services we need on data warehouse automatically.</p><blockquote><p>To summarize, resources are higher-level abstractions of AWS services compared to clients. Resources are the recommended pattern to use boto3 as you don’t have to worry about a lot of the underlying details when interacting with AWS services. As a result, code written with Resources tends to be simpler. However, Resources aren’t available for all AWS services. In such cases, there is no other choice but to use a Client instead.</p></blockquote><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> boto3
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> json
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> configparser
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>aws</span>():
+</span></span><span style=display:flex><span>    KEY <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    SECRET <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    DWH_CLUSTER_TYPE <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    DWH_NUM_NODES <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    DWH_NODE_TYPE <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    DWH_IAM_ROLE_NAME <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    DWH_CLUSTER_IDENTIFIER <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    DWH_DB <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    DWH_DB_USER <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    DWH_DB_PASSWORD <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    DWH_PORT <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    S3_LOG_DATA <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>    S3_LOG_JSONPATH <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>            
+</span></span><span style=display:flex><span>    DWH_IAM_ROLE_ARN <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(self, cfg_file<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;dwh.cfg&#39;</span>):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Set the AWS Config parameters with value from dwh.cfg config file
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param cfg_file: the path of configuration file
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;Parsing the configuration file...</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        config <span style=color:#f92672>=</span> configparser<span style=color:#f92672>.</span>ConfigParser()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>with</span> open(cfg_file) <span style=color:#66d9ef>as</span> cfg_file:
+</span></span><span style=display:flex><span>            config<span style=color:#f92672>.</span>read_file(cfg_file)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>KEY <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#39;AWS&#39;</span>, <span style=color:#e6db74>&#39;KEY&#39;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>SECRET <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#39;AWS&#39;</span>, <span style=color:#e6db74>&#39;SECRET&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_CLUSTER_TYPE <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;DWH&#34;</span>, <span style=color:#e6db74>&#34;DWH_CLUSTER_TYPE&#34;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_NUM_NODES <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;DWH&#34;</span>, <span style=color:#e6db74>&#34;DWH_NUM_NODES&#34;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_NODE_TYPE <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;DWH&#34;</span>, <span style=color:#e6db74>&#34;DWH_NODE_TYPE&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_IAM_ROLE_NAME <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;DWH&#34;</span>, <span style=color:#e6db74>&#34;DWH_IAM_ROLE_NAME&#34;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_CLUSTER_IDENTIFIER <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;DWH&#34;</span>, <span style=color:#e6db74>&#34;DWH_CLUSTER_IDENTIFIER&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_DB <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;CLUSTER&#34;</span>, <span style=color:#e6db74>&#34;DB_NAME&#34;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_DB_USER <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;CLUSTER&#34;</span>, <span style=color:#e6db74>&#34;DB_USER&#34;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_DB_PASSWORD <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;CLUSTER&#34;</span>, <span style=color:#e6db74>&#34;DB_PASSWORD&#34;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_PORT <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;CLUSTER&#34;</span>, <span style=color:#e6db74>&#34;DB_PORT&#34;</span>)
+</span></span><span style=display:flex><span>            
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>S3_LOG_DATA <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#39;S3&#39;</span>, <span style=color:#e6db74>&#39;LOG_DATA&#39;</span>)
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>S3_LOG_JSONPATH <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#39;S3&#39;</span>, <span style=color:#e6db74>&#39;LOG_JSONPATH&#39;</span>)
+</span></span><span style=display:flex><span>            
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>DWH_IAM_ROLE_ARN <span style=color:#f92672>=</span> config<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;IAM_ROLE&#34;</span>, <span style=color:#e6db74>&#34;ARN&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>client</span>(self, client_name, region):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Creates an AWS client (specified by the argument) in region (specified by argument)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param client_name: The client to be created
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param region: The region where service has to be created
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :return client: The client for AWS service
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        client <span style=color:#f92672>=</span> boto3<span style=color:#f92672>.</span>client(client_name, region_name<span style=color:#f92672>=</span>region, aws_access_key_id<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>KEY, aws_secret_access_key<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>SECRET)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> client
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>resource</span>(self, resource_name, region):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Creates an AWS resource (specified by the argument) in region (specified by argument)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param resource_name: The resource to be created
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param region: The region where resource has to be created
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :return resource: The resource for AWS service
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        resource <span style=color:#f92672>=</span> boto3<span style=color:#f92672>.</span>resource(resource_name, region_name<span style=color:#f92672>=</span>region, aws_access_key_id<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>KEY, aws_secret_access_key<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>SECRET)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> resource
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>create_iam_role</span>(self, iam):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Create the AWS Identity and Access Management (IAM) role. Attach AmazonS3ReadOnlyAccess role policy to the IAM
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        specified in argument. Return the IAM role ARN string
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param iam: Boto3 client for IAM
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :return roleArn: IAM role ARN string
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        dwhRole <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>            print(<span style=color:#e6db74>&#39;1.1 Creating a new IAM Role&#39;</span>)
+</span></span><span style=display:flex><span>            dwhRole <span style=color:#f92672>=</span> iam<span style=color:#f92672>.</span>create_role(
+</span></span><span style=display:flex><span>                Path<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;/&#39;</span>,
+</span></span><span style=display:flex><span>                RoleName<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_IAM_ROLE_NAME,
+</span></span><span style=display:flex><span>                Description<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;Allows Redshift clusters to call AWS services on your behalf.&#34;</span>,
+</span></span><span style=display:flex><span>                AssumeRolePolicyDocument<span style=color:#f92672>=</span>json<span style=color:#f92672>.</span>dumps(
+</span></span><span style=display:flex><span>                    {<span style=color:#e6db74>&#39;Statement&#39;</span>: [{<span style=color:#e6db74>&#39;Action&#39;</span>: <span style=color:#e6db74>&#39;sts:AssumeRole&#39;</span>,
+</span></span><span style=display:flex><span>                                    <span style=color:#e6db74>&#39;Effect&#39;</span>: <span style=color:#e6db74>&#39;Allow&#39;</span>,
+</span></span><span style=display:flex><span>                                    <span style=color:#e6db74>&#39;Principal&#39;</span>: {<span style=color:#e6db74>&#39;Service&#39;</span>: <span style=color:#e6db74>&#39;redshift.amazonaws.com&#39;</span>}}],
+</span></span><span style=display:flex><span>                    <span style=color:#e6db74>&#39;Version&#39;</span>: <span style=color:#e6db74>&#39;2012-10-17&#39;</span>})
+</span></span><span style=display:flex><span>            )
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>except</span> <span style=color:#a6e22e>Exception</span> <span style=color:#66d9ef>as</span> exep:
+</span></span><span style=display:flex><span>            print(exep)
+</span></span><span style=display:flex><span>            dwhRole <span style=color:#f92672>=</span> iam<span style=color:#f92672>.</span>get_role(RoleName<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_IAM_ROLE_NAME)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#39;1.2 Attaching Policy&#39;</span>)
+</span></span><span style=display:flex><span>        dwhRole_policy <span style=color:#f92672>=</span> iam<span style=color:#f92672>.</span>attach_role_policy(RoleName<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_IAM_ROLE_NAME, PolicyArn<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;arn:aws:iam::aws:policy&#34;</span>
+</span></span><span style=display:flex><span>                                                                                    <span style=color:#e6db74>&#34;/AmazonS3ReadOnlyAccess&#34;</span>)[
+</span></span><span style=display:flex><span>                                                <span style=color:#e6db74>&#39;ResponseMetadata&#39;</span>][<span style=color:#e6db74>&#39;HTTPStatusCode&#39;</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        roleArn <span style=color:#f92672>=</span> iam<span style=color:#f92672>.</span>get_role(RoleName<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_IAM_ROLE_NAME)[<span style=color:#e6db74>&#39;Role&#39;</span>][<span style=color:#e6db74>&#39;Arn&#39;</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> roleArn
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>create_redshift_cluster</span>(self, redshift, roleArn):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Create the AWS Redshift cluster
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param redshift: Boto3 client for the Redshift
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param roleArn: The ARN string for IAM role
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :return boolean:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;2. Starting Redshift cluster creation&#34;</span>)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>            response <span style=color:#f92672>=</span> redshift<span style=color:#f92672>.</span>create_cluster(
+</span></span><span style=display:flex><span>                ClusterType<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_CLUSTER_TYPE,
+</span></span><span style=display:flex><span>                NodeType<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_NODE_TYPE,
+</span></span><span style=display:flex><span>                NumberOfNodes<span style=color:#f92672>=</span>int(self<span style=color:#f92672>.</span>DWH_NUM_NODES),
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>                DBName<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_DB,
+</span></span><span style=display:flex><span>                ClusterIdentifier<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_CLUSTER_IDENTIFIER,
+</span></span><span style=display:flex><span>                MasterUsername<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_DB_USER,
+</span></span><span style=display:flex><span>                MasterUserPassword<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_DB_PASSWORD,
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>                IamRoles<span style=color:#f92672>=</span>[roleArn]
+</span></span><span style=display:flex><span>            )
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            print(<span style=color:#e6db74>&#34;Redshift cluster creation http response status code: &#34;</span>)
+</span></span><span style=display:flex><span>            print(response[<span style=color:#e6db74>&#39;ResponseMetadata&#39;</span>][<span style=color:#e6db74>&#39;HTTPStatusCode&#39;</span>])
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> response[<span style=color:#e6db74>&#39;ResponseMetadata&#39;</span>][<span style=color:#e6db74>&#39;HTTPStatusCode&#39;</span>] <span style=color:#f92672>==</span> <span style=color:#ae81ff>200</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>except</span> <span style=color:#a6e22e>Exception</span> <span style=color:#66d9ef>as</span> exep:
+</span></span><span style=display:flex><span>            print(exep)
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>delete_redshift_cluster</span>(self, redshift):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Delete the AWS Redshift cluster
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param redshift: Boto3 client for Redshift
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        redshift<span style=color:#f92672>.</span>delete_cluster(ClusterIdentifier<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_CLUSTER_IDENTIFIER, SkipFinalClusterSnapshot<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>redshift_cluster_status</span>(self, redshift):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Retrieves the Redshift cluster status
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param redshift: Boto3 client for Redshift
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :return cluster_status: The cluster status
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        cluster_props <span style=color:#f92672>=</span> redshift<span style=color:#f92672>.</span>describe_clusters(ClusterIdentifier<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_CLUSTER_IDENTIFIER)[<span style=color:#e6db74>&#39;Clusters&#39;</span>][<span style=color:#ae81ff>0</span>]
+</span></span><span style=display:flex><span>        cluster_status <span style=color:#f92672>=</span> cluster_props[<span style=color:#e6db74>&#39;ClusterStatus&#39;</span>]<span style=color:#f92672>.</span>lower()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> cluster_status
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>config_update</span>(self, redshift, cfg_file<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;dwh.cfg&#39;</span>):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Write the cluster endpoint and IAM ARN string to the dwh.cfg configuration file
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param redshift: Boto3 client for Redshift
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;Writing the cluster endpoint address and IAM Role ARN to the config file...</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>)
+</span></span><span style=display:flex><span>        cluster_props <span style=color:#f92672>=</span> redshift<span style=color:#f92672>.</span>describe_clusters(ClusterIdentifier<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>DWH_CLUSTER_IDENTIFIER)[<span style=color:#e6db74>&#39;Clusters&#39;</span>][<span style=color:#ae81ff>0</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        config <span style=color:#f92672>=</span> configparser<span style=color:#f92672>.</span>ConfigParser()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>with</span> open(cfg_file) <span style=color:#66d9ef>as</span> cfg_file:
+</span></span><span style=display:flex><span>            config<span style=color:#f92672>.</span>read_file(cfg_file)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        config<span style=color:#f92672>.</span>set(<span style=color:#e6db74>&#34;CLUSTER&#34;</span>, <span style=color:#e6db74>&#34;HOST&#34;</span>, cluster_props[<span style=color:#e6db74>&#39;Endpoint&#39;</span>][<span style=color:#e6db74>&#39;Address&#39;</span>])
+</span></span><span style=display:flex><span>        config<span style=color:#f92672>.</span>set(<span style=color:#e6db74>&#34;IAM_ROLE&#34;</span>, <span style=color:#e6db74>&#34;ARN&#34;</span>, cluster_props[<span style=color:#e6db74>&#39;IamRoles&#39;</span>][<span style=color:#ae81ff>0</span>][<span style=color:#e6db74>&#39;IamRoleArn&#39;</span>])
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>with</span> open(cfg_file, <span style=color:#e6db74>&#39;w+&#39;</span>) <span style=color:#66d9ef>as</span> cfg_file:
+</span></span><span style=display:flex><span>            config<span style=color:#f92672>.</span>write(cfg_file)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>open_redshift_port</span>(ec2, redshift):
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        Opens an incoming TCP port to access Redshift cluster endpoint on VPC security group
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param ec2: Boto3 client for EC2 instance
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        :param Redshift: Boto3 client for Redshift
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>        &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>global</span> DWH_CLUSTER_IDENTIFIER, DWH_PORT
+</span></span><span style=display:flex><span>        cluster_props <span style=color:#f92672>=</span> redshift<span style=color:#f92672>.</span>describe_clusters(ClusterIdentifier<span style=color:#f92672>=</span>DWH_CLUSTER_IDENTIFIER)[<span style=color:#e6db74>&#39;Clusters&#39;</span>][<span style=color:#ae81ff>0</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>            vpc <span style=color:#f92672>=</span> ec2<span style=color:#f92672>.</span>Vpc(id<span style=color:#f92672>=</span>cluster_props[<span style=color:#e6db74>&#39;VpcId&#39;</span>])
+</span></span><span style=display:flex><span>            all_security_groups <span style=color:#f92672>=</span> list(vpc<span style=color:#f92672>.</span>security_groups<span style=color:#f92672>.</span>all())
+</span></span><span style=display:flex><span>            print(all_security_groups)
+</span></span><span style=display:flex><span>            defaultSg <span style=color:#f92672>=</span> all_security_groups[<span style=color:#ae81ff>0</span>]
+</span></span><span style=display:flex><span>            print(defaultSg)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            defaultSg<span style=color:#f92672>.</span>authorize_ingress(
+</span></span><span style=display:flex><span>                GroupName<span style=color:#f92672>=</span>defaultSg<span style=color:#f92672>.</span>group_name,
+</span></span><span style=display:flex><span>                CidrIp<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;0.0.0.0/0&#39;</span>,
+</span></span><span style=display:flex><span>                IpProtocol<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;TCP&#39;</span>,
+</span></span><span style=display:flex><span>                FromPort<span style=color:#f92672>=</span>int(DWH_PORT),
+</span></span><span style=display:flex><span>                ToPort<span style=color:#f92672>=</span>int(DWH_PORT)
+</span></span><span style=display:flex><span>            )
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>except</span> <span style=color:#a6e22e>Exception</span> <span style=color:#66d9ef>as</span> error:
+</span></span><span style=display:flex><span>            print(error)
+</span></span></code></pre></div><h2 id=sql-toolkit>SQL Toolkit</h2><p>While implementing a data warehouse on AWS, a lots of SQL are needed, which are used to create tables, insert data for ETL.</p><h2 id=create-a-cluster>Create a Cluster</h2><p>The script <code>create_aws_cluster.py</code> is used to create a cluster on AWS. Run this file on console:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>python create_aws_cluster.py
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> time
+</span></span><span style=display:flex><span><span style=color:#f92672>from</span> aws_toolkit <span style=color:#f92672>import</span> <span style=color:#f92672>*</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>main</span>():
+</span></span><span style=display:flex><span>    a <span style=color:#f92672>=</span> aws()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    ec2 <span style=color:#f92672>=</span> a<span style=color:#f92672>.</span>resource(<span style=color:#e6db74>&#39;ec2&#39;</span>, <span style=color:#e6db74>&#34;us-west-2&#34;</span>)
+</span></span><span style=display:flex><span>    s3 <span style=color:#f92672>=</span> a<span style=color:#f92672>.</span>resource(<span style=color:#e6db74>&#39;s3&#39;</span>, <span style=color:#e6db74>&#34;us-west-2&#34;</span>)
+</span></span><span style=display:flex><span>    iam <span style=color:#f92672>=</span> a<span style=color:#f92672>.</span>client(<span style=color:#e6db74>&#39;iam&#39;</span>, <span style=color:#e6db74>&#34;us-west-2&#34;</span>)
+</span></span><span style=display:flex><span>    redshift <span style=color:#f92672>=</span> a<span style=color:#f92672>.</span>client(<span style=color:#e6db74>&#39;redshift&#39;</span>, <span style=color:#e6db74>&#34;us-west-2&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    roleArn <span style=color:#f92672>=</span> a<span style=color:#f92672>.</span>create_iam_role(iam)
+</span></span><span style=display:flex><span>    clusterCreationStarted <span style=color:#f92672>=</span> a<span style=color:#f92672>.</span>create_redshift_cluster(redshift, roleArn)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> clusterCreationStarted:
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;The cluster is being created.&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>True</span>:
+</span></span><span style=display:flex><span>            print(<span style=color:#e6db74>&#34;Checking if the cluster is created...&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> a<span style=color:#f92672>.</span>redshift_cluster_status(redshift) <span style=color:#f92672>==</span> <span style=color:#e6db74>&#39;available&#39;</span>:
+</span></span><span style=display:flex><span>                a<span style=color:#f92672>.</span>config_update(redshift)
+</span></span><span style=display:flex><span>                a<span style=color:#f92672>.</span>open_redshift_port(ec2, redshift)
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>break</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>else</span>:
+</span></span><span style=display:flex><span>                print(<span style=color:#e6db74>&#34;The cluster is still being created. Please wait.&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            time<span style=color:#f92672>.</span>sleep(<span style=color:#ae81ff>30</span>)
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;The cluster is created successfully.</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>)
+</span></span><span style=display:flex><span>        
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#39;__main__&#39;</span>:
+</span></span><span style=display:flex><span>    main()
+</span></span></code></pre></div><h2 id=create-tables>Create tables</h2><p>The script <code>create_tables.py</code> is used to create tables on Redshift. Run this file on console:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>python create_table.py
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> sys
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> configparser
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> psycopg2
+</span></span><span style=display:flex><span><span style=color:#f92672>from</span> sql_tookit <span style=color:#f92672>import</span> create_table_queries, drop_table_queries
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>drop_tables</span>(cur, conn):
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Drop all the table in the Redshift cluster
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    :param cur: cursor object to database connection
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    :param conn: connection object to database
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> query <span style=color:#f92672>in</span> drop_table_queries:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>            cur<span style=color:#f92672>.</span>execute(query)
+</span></span><span style=display:flex><span>            conn<span style=color:#f92672>.</span>commit()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>except</span> psycopg2<span style=color:#f92672>.</span>Error <span style=color:#66d9ef>as</span> e:
+</span></span><span style=display:flex><span>            print(e)
+</span></span><span style=display:flex><span>            conn<span style=color:#f92672>.</span>close()
+</span></span><span style=display:flex><span>            sys<span style=color:#f92672>.</span>exit(<span style=color:#ae81ff>0</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>create_tables</span>(cur, conn):
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Create all the tables in the Redshift cluster
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    :param cur: cursor object to database connection
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    :param conn: connection object to database
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> query <span style=color:#f92672>in</span> create_table_queries:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>            cur<span style=color:#f92672>.</span>execute(query)
+</span></span><span style=display:flex><span>            conn<span style=color:#f92672>.</span>commit()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>except</span> psycopg2<span style=color:#f92672>.</span>Error <span style=color:#66d9ef>as</span> e:
+</span></span><span style=display:flex><span>            print(e)
+</span></span><span style=display:flex><span>            conn<span style=color:#f92672>.</span>close()
+</span></span><span style=display:flex><span>            sys<span style=color:#f92672>.</span>exit(<span style=color:#ae81ff>0</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>main</span>():
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Connects to the Redshift cluster and resets the tables.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    config <span style=color:#f92672>=</span> configparser<span style=color:#f92672>.</span>ConfigParser()
+</span></span><span style=display:flex><span>    config<span style=color:#f92672>.</span>read(<span style=color:#e6db74>&#39;dwh.cfg&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>        conn <span style=color:#f92672>=</span> psycopg2<span style=color:#f92672>.</span>connect(<span style=color:#e6db74>&#34;host=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> dbname=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> user=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> password=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> port=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(<span style=color:#f92672>*</span>config[<span style=color:#e6db74>&#39;CLUSTER&#39;</span>]<span style=color:#f92672>.</span>values()))
+</span></span><span style=display:flex><span>        cur <span style=color:#f92672>=</span> conn<span style=color:#f92672>.</span>cursor()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>except</span> <span style=color:#a6e22e>Exception</span> <span style=color:#66d9ef>as</span> e:
+</span></span><span style=display:flex><span>        print(e)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    drop_tables(cur, conn)
+</span></span><span style=display:flex><span>    create_tables(cur, conn)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    conn<span style=color:#f92672>.</span>close()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
+</span></span><span style=display:flex><span>    main()
+</span></span></code></pre></div><h2 id=execute-etl>Execute ETL</h2><p>The script <code>etl.py</code> is used to execute ETL processing. Run this file on console:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>python etl.py
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> configparser
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> psycopg2
+</span></span><span style=display:flex><span><span style=color:#f92672>from</span> sql_toolkit <span style=color:#f92672>import</span> copy_table_queries, insert_table_queries
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>load_staging_tables</span>(cur, conn):
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Load data from files stored in S3 to the staging tables.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#34;Loading data from JSON files stored in S3 buckets into staging tables&#34;</span>)
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> query <span style=color:#f92672>in</span> copy_table_queries:
+</span></span><span style=display:flex><span>        cur<span style=color:#f92672>.</span>execute(query)
+</span></span><span style=display:flex><span>        conn<span style=color:#f92672>.</span>commit()
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#34;Complete.</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>insert_tables</span>(cur, conn):
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Insert data from staging tables into the tables.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#34;Inserting data from staging tables into Redshift tables&#34;</span>)
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> query <span style=color:#f92672>in</span> insert_table_queries:
+</span></span><span style=display:flex><span>        cur<span style=color:#f92672>.</span>execute(query)
+</span></span><span style=display:flex><span>        conn<span style=color:#f92672>.</span>commit()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#34;Complete.</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>)
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>main</span>():
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Extract song metadata and user activity data from S3, transform it using a staging table, and load it into fact and dimensional tables for analysis
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    config <span style=color:#f92672>=</span> configparser<span style=color:#f92672>.</span>ConfigParser()
+</span></span><span style=display:flex><span>    config<span style=color:#f92672>.</span>read(<span style=color:#e6db74>&#39;dwh.cfg&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    conn <span style=color:#f92672>=</span> psycopg2<span style=color:#f92672>.</span>connect(<span style=color:#e6db74>&#34;host=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> dbname=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> user=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> password=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> port=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(<span style=color:#f92672>*</span>config[<span style=color:#e6db74>&#39;CLUSTER&#39;</span>]<span style=color:#f92672>.</span>values()))
+</span></span><span style=display:flex><span>    cur <span style=color:#f92672>=</span> conn<span style=color:#f92672>.</span>cursor()
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    load_staging_tables(cur, conn)
+</span></span><span style=display:flex><span>    insert_tables(cur, conn)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    conn<span style=color:#f92672>.</span>close()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
+</span></span><span style=display:flex><span>    main()
+</span></span></code></pre></div></section><div class=paginator><a class=prev href=https://10iA0.github.io/blog/introduction-of-pyspark/><span>&larr;&nbsp;&nbsp;</span><span>Introduction of PySpark</span></a>
+<a class=next href=https://10iA0.github.io/blog/introduction-to-data-warehouse/><span>Introduction to Data Warehouse</span><span>&nbsp;&nbsp;&rarr;</span></a></div><div class=related-resources><h3>Related Resources</h3><nav><ul><li><a href=/blog/introduction-to-data-warehouse/>Introduction to Data Warehouse</a></li></ul></nav></div></article></div><footer class=footer><p>&copy; 2022 <a href=https://10iA0.github.io>Horseman, pass by.</a>
+Powered by
+<a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>
+<a href=https://github.com/guangzhengli/hugo-theme-ladder rel=noopener target=_blank>Ladder</a>
+️</p></footer><a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){document.body.scrollTop>800||document.documentElement.scrollTop>800?(mybutton.style.visibility="visible",mybutton.style.opacity="1"):(mybutton.style.visibility="hidden",mybutton.style.opacity="0")}</script><script>document.querySelectorAll("pre > code").forEach(e=>{const s=e.parentNode.parentNode,t=document.createElement("button");t.classList.add("copy-code"),t.innerHTML="Copy";function n(){t.innerHTML="Copied",setTimeout(()=>{t.innerHTML="Copy"},2e3)}t.addEventListener("click",t=>{if("clipboard"in navigator){navigator.clipboard.writeText(e.textContent),n();return}const s=document.createRange();s.selectNodeContents(e);const o=window.getSelection();o.removeAllRanges(),o.addRange(s);try{document.execCommand("copy"),n()}catch{}o.removeRange(s)}),e.parentNode.appendChild(t)})</script></main></body><script src=https://cdnjs.cloudflare.com/ajax/libs/medium-zoom/1.0.6/medium-zoom.min.js integrity="sha512-N9IJRoc3LaP3NDoiGkcPa4gG94kapGpaA5Zq9/Dr04uf5TbLFU5q0o8AbRhLKUUlp8QFS2u7S+Yti0U7QtuZvQ==" crossorigin=anonymous referrerpolicy=no-referrer></script>
+<script>const images=Array.from(document.querySelectorAll(".blog-content img"));images.forEach(e=>{mediumZoom(e,{margin:10,scrollOffset:40,container:null,template:null,background:"rgba(0, 0, 0, 0.5)"})})</script><script src=/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin=anonymous defer></script></html>
