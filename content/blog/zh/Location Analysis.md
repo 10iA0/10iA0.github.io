@@ -3,7 +3,7 @@ title: Location Analysis
 date: 2018-10-25T20:32:00
 tags: ["Operation Analysis"]
 series: ["Qing Yang"]
-featured: true
+featured: false
 ---
 “点位分析”是IoT洗衣业态最重要的分析之一，因为通过互联网，尤其是数据分析，赋能之后，我们与竞品的直接差异就是是否存在有效的**数据运营**。数据化运营犹如开车，当我们踩一脚油门的时候，仪表盘立刻会有所反应，就算我们身体感受不到变化，我们也能通过仪表盘感受变化。
 

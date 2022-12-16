@@ -1,5 +1,5 @@
 ---
-title: Hadoop-Running a cluster-Configurate a cluster (Core, HDFS, MapReduce and YARN)
+title: Hadoop-Configurate a cluster (Core, HDFS, MapReduce and YARN)
 date: 2021-06-22 12:37:00
 tags: ["core-site.xml","hdfs-site.xml","yarn-site.xml","mapred-site.xml"]
 series: ["BDC","Hadoop"]

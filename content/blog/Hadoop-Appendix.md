@@ -1,5 +1,5 @@
 ---
-title: Hadoop-Running a cluster-Start and stop functions on HDFS and YARN
+title: Hadoop-Appendix
 date: 2021-06-22 18:55:00
 tags: ["HDFS","YARN"]
 series: ["BDC","Hadoop"]
@@ -7,8 +7,8 @@ featured: false
 ---
 
 <!--more-->
-
-## Start HDFS
+## Basic Operations
+### Start HDFS
 
 `Attention!` The NameNode should be formatted only and only if the HDFS is firstlly started. 
 
@@ -39,10 +39,10 @@ Start SecondaryNameNode on hadoop104
 [jihang@hadoop104 hadoop-3.1.3]$ hdfs --daemon start secondarynamenode
 ```
 
-## Stop HDFS
+### Stop HDFS
 Replace `stop` with `start` on commands above.
 
-## Start YARN
+### Start YARN
 
 Start ResourceManager on hadoop103
 ```sh
@@ -60,7 +60,7 @@ Start NodeManager on hadoop102 hadoop103 hadoop104
 [jihang@hadoop102 hadoop-3.1.3]$ hdfs --daemon start nodemanager
 ```
 
-## Stop YARN
+### Stop YARN
 
 Replace `stop` with `start` on commands above.
 

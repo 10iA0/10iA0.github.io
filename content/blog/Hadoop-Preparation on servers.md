@@ -1,5 +1,5 @@
 ---
-title: Hadoop-Prerequisites-Preparation on servers 
+title: Hadoop-Preparation on servers 
 date: 2021-06-15 13:38:00
 tags: ["Linux minimal installation","firewall","IP","hostname","hosts"]
 series: ["BDC","Hadoop"]

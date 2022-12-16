@@ -1,5 +1,5 @@
 ---
-title: Hadoop-Running a cluster-Start and stop HDFS and YARN automatically
+title: Hadoop-Start and stop cluste
 date: 2021-06-23 22:08:00
 tags: ["ssh","HDFS","YARN"]
 series: ["BDC","Hadoop"]
