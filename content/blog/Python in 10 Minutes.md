@@ -1,6 +1,6 @@
 ---
-title: Packages on Python
-date: 2019-07-25T16:43:00
+title: Python in 10 Minutes
+date: 2017-09-25 16:43:00
 tags: ["os"]
 series: ["Python"]
 featured: false
@@ -10,7 +10,22 @@ Python.os
 
 <!--more-->
 
-# Python os
+## `__name__` and `main()`
+
+A Python file can be executed as a script or imported as a module. When a Python file is ran as a script, its variable `__name__`equals to `'__main__'`. Otherwise, `__name__` does not equals to `'__main__'`. 
+
+Normally, we define a function `main()` in which we write what we want the script to do. For example,
+
+```python
+def main():
+    print(Hello World)
+
+if __name__=='__main__':
+    main()
+```
+
+When we execute a Python file as a script (run `Python Hello.py` in console), as the variable `__name__`equals to `'__main__'`, the console shall print `Hello World`. However, if we import the Python file as a module, all classes and functions except `main` would be imported and executed as `__name__` does not equals to `'__main__'`.
+
 ## Python os.walk()
 
 I cite the pharagraph below form this link:

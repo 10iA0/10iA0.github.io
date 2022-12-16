@@ -41,6 +41,7 @@ Explanation of files about SSH:
 ### Copy id_rsa.pub to servers
 #### Hadoop102
 ```sh
+[jihang@hadoop102 .ssh]$ ssh-copy-id hadoop102
 [jihang@hadoop102 .ssh]$ ssh-copy-id hadoop103
 [jihang@hadoop102 .ssh]$ ssh-copy-id hadoop104
 ```
@@ -48,6 +49,7 @@ Explanation of files about SSH:
 #### Hadoop103
 ```sh
 [jihang@hadoop103 .ssh]$ ssh-copy-id hadoop102
+[jihang@hadoop103 .ssh]$ ssh-copy-id hadoop103
 [jihang@hadoop103 .ssh]$ ssh-copy-id hadoop104
 ```
 
@@ -55,6 +57,7 @@ Explanation of files about SSH:
 ```sh
 [jihang@hadoop104 .ssh]$ ssh-copy-id hadoop102
 [jihang@hadoop104 .ssh]$ ssh-copy-id hadoop103
+[jihang@hadoop104 .ssh]$ ssh-copy-id hadoop104
 ```
 
 ## Configure workers
@@ -111,7 +114,7 @@ stop Yarn.
 Write a script that check Java's processings on servers of a cluster: `jps_cluster.sh`
 ```sh
 [jihang@hadoop102 ~]$ cd /home/jihang/bin
-[jihang@hadoop102 ~]$ touch jps_cluster.sh
+# [jihang@hadoop102 ~]$ touch jps_cluster.sh
 [jihang@hadoop102 ~]$ sudo vim jps_cluster.sh
 ```
 
@@ -139,7 +142,7 @@ Sync shell scripts.
 Write a script that start and stop HDFS, YARN and historyserver on a cluster: `hadoop_cluster.sh`.
 ```sh
 [jihang@hadoop102 ~]$ cd /home/jihang/bin
-[jihang@hadoop102 ~]$ touch hadoop_cluster.sh
+# [jihang@hadoop102 ~]$ touch hadoop_cluster.sh
 [jihang@hadoop102 ~]$ sudo vim hadoop_cluster.sh
 ```
 
